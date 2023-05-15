@@ -99,27 +99,21 @@ const App = () => {
         number: newNumber
     }
     
-    const personExists = persons.some(person=> person.name === newName)
-    
+    const personExists = persons.find(person=> person.name === newName)
+    console.log(personExists)
     
     if(personExists){
-        // add a number.... if the user already exists update the number 
-    function findNumber(person){
-      return person.name === newName
-    }
-
-    //search for an existing person with the number === new number
-    const numberToUpdate = persons.find(findNumber)
+      const confirmText = `${newName} is alreaddy added to the phonebook.  would you like to update the current number?`
+      if (window.confirm(confirmText) === true){
     //object used to pass an updated number 
     const updatedNumber = {
       // spread the number to update and the updated number as a new object
-      ...numberToUpdate, number: newNumber
+      ...personExists, number: newNumber
     }
-    const confirmNumberUpdate = confirm(`${newName} is alreaddy added to the phonebook.  would you like to update the current number?`)
-    
-    if(confirmNumberUpdate) {
-      //if the person chooses to replace the number send a put request to the person with the id of the person to be updated
-      personsService.update(numberToUpdate.id, updatedNumber)
+    console.log('persons', persons)
+    console.log(`ready to update ${updatedNumber.name}`)
+
+    personsService.update(updatedNumber.id, updatedNumber)
       .then(returnedNumber=>{
         console.log(returnedNumber)
         // set the state after making the put request map over the persons array if the id is not the id of the updated number return the old person object if the id is === return the updated value instead of the old value in this case we replace returnedNumber (the object that was updated in the put request) with the old number object 
@@ -130,11 +124,9 @@ const App = () => {
       setNewName('')
       setNewNumber('')
       }
+      }
 
-      console.log('persons', persons)
-      console.log(`ready to update ${numberToUpdate.name}`)
-    
-    } else if (newName === '') {
+     else if (newName === '') {
       alert('please enter a name')
     }
     else {
@@ -152,7 +144,7 @@ const App = () => {
 
     const deleteEntry = (id, EntryName) => {
       console.log(`person to be deleted ${EntryName}`)
-      const confirmDelete = confirm('would you like to delete this entry?')
+      const confirmDelete = window.confirm('would you like to delete this entry?')
       console.log('entry to be deleted', EntryName)
 
       if (confirmDelete){
