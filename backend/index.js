@@ -1,67 +1,58 @@
+require('dotenv').config()
 const express = require('express')
 const morgan = require('morgan')
 const app = express()
 const cors = require('cors')
+
+const Contact = (require('./models/contact'))
+
 
 app.use(express.static('build'))
 app.use(cors())
 app.use(express.json())
 app.use(morgan('tiny'))
 
-const contacts = [
-    { 
-      "id": 1,
-      "name": "Arto Hellas", 
-      "number": "040-123456"
-    },
-    { 
-      "id": 2,
-      "name": "Ada Lovelace", 
-      "number": "39-44-5323523"
-    },
-    { 
-      "id": 3,
-      "name": "Dan Abramov", 
-      "number": "12-43-234345"
-    },
-    { 
-      "id": 4,
-      "name": "Mary Poppendieck", 
-      "number": "39-23-6423122"
-    }, 
-    { 
-      "id": 5,
-      "name": "Mary Poppendieck", 
-      "number": "39-23-6423122"
-    }
-]
-
-
 app.get('/api/contacts', (request, response)=>{
-    response.json(contacts)
+    Contact.find({}).then(contacts =>{
+        response.json(contacts)
+    })
 })
 
 app.get('/api/contacts/info', (request, response)=>{
     const currentDate = new Date()
-    const contactsLength = contacts.length
+    Contact.find({}).then(contacts => (
+        response.send(`<p>You currently have ${contacts.length} people in your phonebook <br> ${currentDate}</p>`)        
+    ))
 
-    response.send(`<p>You currently have ${contactsLength} people in your phonebook <br> ${currentDate}</p>`)
-})
-app.get('/api/contacts/:id', (request, response) => {
-    const id = Number(request.params.id)
-    const contact = contacts.find(contact => contact.id === id) 
-    if (contact) {
-        response.json(contact)
-    } else {
-        response.status(404).end()
-    }
+
 })
 
+app.get('/api/contacts/:id', (request, response, next) => {
+    Contact.findById(request.params.id)
+    .then(contact => {
+        if (contact) {
+            response.json(contact)
+        } else {
+            response.status(404).end()
+        }
+      })
+      .catch(error => next(error))
+    })
+      // code that was being used to find the id without a backend hooked up yet
+    // const id = Number(request.params.id)
+    // const contact = contacts.find(contact => contact.id === id) 
+    // if (contact) {
+    //     response.json(contact)
+    // } else {
+    //     response.status(404).end()
+    // }
 
-const generateId = () => {
-    const randomId = Math.ceil(Math.random()* 95726904 + 1)
-    return randomId
-    }
+
+
+// const generateId = () => {
+//     const randomId = Math.ceil(Math.random()* 95726904 + 1)
+//     return randomId
+//     }
 
 app.post('/api/contacts/', (request, response)=>{
     const body = request.body
@@ -82,30 +73,76 @@ app.post('/api/contacts/', (request, response)=>{
         })
     }
     
-    const contact = {
-        id: generateId(),
-        name: body.name,
-        number: body.number
+     else {
+        const contact = new Contact({
+            name: body.name,
+            number: body.number
+        })
+
+        contact.save().then(savedContact => {
+            console.log(`${savedContact.name} has been saved to the database`)
+            response.json(savedContact)
+        })
+    
+        // const phoneBook = contacts.concat(contact)
+    
+
+    
     }
 
-    const phoneBook = contacts.concat(contact)
-
-    response.json(phoneBook)
 
 })
 
-app.delete('/api/contacts/:id', (request, response)=>{
-    const id = Number(request.params.id)
-    const contact = contacts.filter(contact => contact.id === id)
-    console.log(contact[0].name, 'has been deleted')
-    response.status(204).end()
+app.put('/api/contacts/:id', (request, response, next) => {
+const body = request.body
+
+const contact = {
+    name: body.name,
+    number: body.number
+}
+
+Contact.findByIdAndUpdate(request.params.id, contact, {new: true}).then(updatedContact=> {
+    response.json(updatedContact)
+})
+.catch(error => next(error))
+})
+
+app.delete('/api/contacts/:id', (request, response, next)=>{
+    Contact.findByIdAndRemove(request.params.id)
+        .then(result => {
+            console.log(result)
+            response.status(204).end()
+        })
+        .catch(error => next(error))
+ 
+    // const id = Number(request.params.id)
+    // const contact = contacts.filter(contact => contact.id === id)
+    // console.log(contact[0].name, 'has been deleted')
+    // response.status(204).end()
 })
 
 
 
+const unknownEndpoint = (request, response) => {
+    response.status(404).send({ error: 'unknown endpoint' })
+  }
+  
+  app.use(unknownEndpoint)
+  
+  const errorHandler = (error, request, response, next) => {
+    console.error(error.message)
+  
+    if (error.name === 'CastError') {
+      return response.status(400).send({ error: 'malformatted id' })
+    } 
+  
+    next(error)
+  }
 
+app.use(errorHandler)
 
-const PORT = process.env.PORT ||9000
+const PORT = process.env.PORT || 9000
+
 app.listen(PORT, ()=>{
     console.log(`server is listening on port ${PORT}`)
 })

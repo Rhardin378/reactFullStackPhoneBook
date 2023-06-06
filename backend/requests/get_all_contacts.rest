@@ -1,1 +1,1 @@
-GET http://localhost:9000/api/contacts/
+GET http://localhost:9004/api/contacts/34234             
