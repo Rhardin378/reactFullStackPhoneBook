@@ -15,7 +15,7 @@ app.use(morgan('tiny'))
 app.get('/api/contacts', (request, response)=>{
     Contact.find({}).then(contacts =>{
         response.json(contacts)
-    })
+    }).catch(error => console.error(error.message))
 })
 
 app.get('/api/contacts/info', (request, response)=>{
