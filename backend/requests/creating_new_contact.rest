@@ -1,7 +1,7 @@
-POST http://localhost:9000/api/contacts
+POST http://localhost:9004/api/contacts
 Content-Type: application/json
 
 {
-    "name": "Arto Hellas",
-    "number": "3248-482"
+    "name": "Asdfs",
+    "number": "2333-4234149"
 }
